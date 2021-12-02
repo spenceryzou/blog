@@ -83,6 +83,8 @@ We compare the performance of training and segmenting among the following prepro
 |       | subword-nmt   | yes      | 55.01         | 53.40         |
 | Seg.  | SentencePiece | no       | 7.15          | 12.48         |
 |       | subword-nmt   | no       | 201.2         | 32.42         |
+|       | SentencePiece | yes      | 8.00          | 19.82         |
+|       | subword-nmt   | yes      | 23.32         | 27.50         |
 
 The key observations are:
 - Training speed for SentencePiece for en is comparable for pre-tok or without. This is expected as english is already segmented by whitespaces.
