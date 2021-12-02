@@ -57,7 +57,7 @@ To tackle the challenges, we can use **SentencePiece**. SentencePiece is unique 
 - Raw  text: Hello world.
 - Tokenized: [Hello] [▁Wor] [ld] [.]
 
-The above example can have lossless detokenization, being put back together completely without any additional rules. SentencePiece is able to process this at a character level with comparable speed since it uses a priority-queue based BPE algorithm instead of the naive scan of all pairs normally used with BPE. This reduces the algorithmic runtime from [equation](https://latex.codecogs.com/gif.latex?O%28nlogn%29) to [equation](https://latex.codecogs.com/gif.latex?O%28n%5E%7B2%7D%29).
+The above example can have lossless detokenization, being put back together completely without any additional rules. SentencePiece is able to process this at a character level with comparable speed since it uses a priority-queue based BPE algorithm instead of the naive scan of all pairs normally used with BPE. This reduces the algorithmic runtime from <img src="https://latex.codecogs.com/gif.latex?O(n^{2})" title="O(n^{2})" /> to <img src="https://latex.codecogs.com/gif.latex?O(nlogn)" title="O(nlogn)" />.
 
 **Encoder and Decoder**. Encoding and decoding just refer to applying the subword vocabulary on the text, and converting it back to the full text respectively.
 
@@ -67,59 +67,32 @@ Finally, SentencePiece has self-contained models with no external dependencies. 
 
 ### Dataset
 
-We evaluate our model on different 
-
-### Main Results
-
-We compare the performance among the following models:
-
-- **CNN**, **LSTM**, **BiLSTM**, **Context-Aware**, **BERT-RE**, **RoBERTa-RE**, **CorefBERT-RE**, **CorefRoBERTa-RE**: Using different encoding mechanisms to simply encode the whole document and extract relations.
-- **HIN-Glove**, **HIN-BERT**: Extracting relations through a hierarchical interaction network with either Glove embedding or BERT.
-- **GAT**, **GCNN**, **EOG**, **AGGCN**, **LSR-Glove**, **LSR-BERT**: Previous graph-based methods, while our graph construction is totally different from theirs and they conduct logical reasoning only based on GCN.
-- **GAIN-Glove**, **GAIN-BERT**: Our proposed model with either Glove embedding or BERT.
-
-The evaluation metrics we use are F1/AUC and Ign-F1/Ign-AUC. The latter means we do not consider the triples (i.e., head-relation-tail) that are already contained in the training set.
-
-![image5](./image5.png)
-
-The key observations are:
-- Among the models not using BERT or BERT variants, GAIN-GloVe consistently outperforms all sequential-based and graph-based strong baselines by 0.9∼12.82 F1 score on the test set. 
-- Among the models using BERT or BERT variants, GAIN-BERT base yields a great improvement of F1/Ign F1 on dev and test set by 2.22/6.71 and 2.19/2.03, respectively, in comparison with the strong baseline LSR-BERT base. GAIN-BERT large also improves 2.85/2.63 F1/Ign F1 on test set compared with
-previous state-of-the-art method, CorefRoBERTaRElarge.
-- GAIN can better utilize powerful BERT representation. LSR-BERT base improves F1 by 3.83 and 4.87 on dev and test set with GloVe embedding replaced with BERTbase while our GAIN-BERT base yields an improvement by 5.93 and 6.16.
-
-### Ablation Study
-
-We conduct ablation study by removing the mention-level graph, entity-level graph inference module, and the document node in the mention-level graph. The F1 scores on test set significantly decrease by 2.02\~2.34/1.61\~1.90 for GAIN-Glove/GAIN-BERT.
-
-![image6](./image6.png)
-
-### Further Analysis
-
-#### Cross-sentence Relation Extraction
-
-We evaluate GAIN on relations within a single sentence (Intra-F1) and those involving multiple sentences (Inter-F1), respectively. GAIN outperforms other baselines not only in Intra-F1 but also Inter-F1. The removal of Mention-level Graph (hMG) leads to a more considerable decrease in Inter-F1 than Intra-F1, which indicates
-our hMG do help interactions among mentions, especially those distributed in different sentences with long-distance dependency.
-
-<div align=center><img src="./image7.png"></div>
-
-#### Logical Reasoning for Relation Extraction
-
-We evaluate GAIN on relations requiring logical reasoning (Infer-F1), and the experimental results show GAIN can better handle relational inference. For example, GAIN-BERT base improves 5.11 Infer-F1 compared with RoBERTa-RE base. The inference module also plays an important role in capturing potential inference chains between entities, without which GAIN-BERT base would drop by 1.78 Infer-F1.
-
-<div align=center><img src="./image8.png"></div>
+We evaluate different preprocessing of English-Japanese translation of Wikipedia articles, as in the Kyoto Free Translation Task, as conducted by Kudo et al., 2018. The training and test data of KFTT consist of 440k and 1160 sentences respectively.
 
 ### Case Study
 
-The figure above shows the case study of our proposed model GAIN, in comparison with other baselines. As is shown, BiLSTM can only identify two relations within the first sentence. Both BERT-RE base and GAIN-BERT base can successfully predict **Without Me** is part of **The Eminem Show**. But only GAIN-BERT base is able to deduce the performer and publication date of **Without Me** are the same as those of **The Eminem Show**, namely **Eminem** and **May 26, 2002**, where it requires logical inference across sentences.
+We compare the performance of training and segmenting among the following preprocess tools for jp and en.
 
-![image9](./image9.png)
+- **subword-nmt w/ pre-tok**, **SentencePiece w/ pre-tok**, **subword-nmt**, **SentencePiece**
+
+| Task  | Tool          | Pre-tok. | Time (sec) jp | Time (sec) en |
+|-------|---------------|----------|---------------|---------------|
+| Train | SentencePiece | no       | 99.73         | 65.26         |
+|       | subword-nmt   | no       | 500.72        | 83.50         |
+|       | SentencePiece | yes      | 8.23          | 14.90         |
+|       | subword-nmt   | yes      | 55.01         | 53.40         |
+| Seg.  | SentencePiece | no       | 7.15          | 12.48         |
+|       | subword-nmt   | no       | 201.2         | 32.42         |
+
+The key observations are:
+- Training speed for SentencePiece for en is comparable for pre-tok or without. This is expected as english is already segmented by whitespaces.
+- SentencePiece shows larger performance gains for jp compared with pre-tok and without, particularly compared to subword-nmt. 
+
 
 ## Conclusion
 
-Extracting inter-sentence relations and conducting relational reasoning are challenging in document-level relation extraction. In this paper, we introduce Graph Aggregationand-Inference Network (GAIN) to better cope with document-level relation extraction, which features double graphs in different granularity. GAIN
-utilizes a heterogeneous Mention-level Graph to model the interaction among different mentions across the document and capture document-aware features. It also uses an Entity-level Graph with a proposed path reasoning mechanism to infer relations more explicitly. Experimental results on the large-scale human annotated dataset, DocRED, show GAIN outperforms previous methods, especially in inter-sentence and inferential relations scenarios. The ablation study also confirms the effectiveness of different modules in our model.
+With SentencePiece, text can be tokenized regardless of pretokenization at speed. This means that it can be easily included in online models, making end-to-end NLP models more available. In addition, SentencePiece can be used independent of language making pre-training simpler.
 
 ## Reference 
 
-- Yuan Yao, Deming Ye, Peng Li, Xu Han, Yankai Lin, Zhenghao Liu, Zhiyuan Liu, Lixin Huang, Jie Zhou, Maosong Sun. 2019. DocRED: A Large-Scale Document-Level Relation Extraction Dataset. In Proceedings of ACL. 
+- Kudo, Taku, and John Richardson. “SentencePiece: A Simple and Language Independent Subword Tokenizer and Detokenizer for Neural Text Processing.” In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, 66–71. Brussels, Belgium: Association for Computational Linguistics, 2018. https://doi.org/10.18653/v1/D18-2012.
